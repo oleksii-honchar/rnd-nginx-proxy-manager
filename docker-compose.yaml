@@ -6,8 +6,8 @@ services:
     container_name: nginx-proxy-manager
     ports:
       - 4081:81
-      - 4080:80
-      - 4443:443
+      - 80:80
+      - 443:443
     environment: # Uncomment this if IPv6 is not enabled on your host
       - DISABLE_IPV6=true # Uncomment this if IPv6 is not enabled on your host
       - PUID=$CURRENT_USER_ID
