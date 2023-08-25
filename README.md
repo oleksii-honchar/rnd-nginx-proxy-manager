@@ -67,13 +67,16 @@ Use `dnsmasq`
   ``` 
 - Copy the default configuration file. And set your domain resolution to IP
   ```bash
-  sudo mkdir -p /usr/local/etc && \
-  sudo cp $(brew list dnsmasq | grep /dnsmasq.conf) /usr/local/etc/dnsmasq.conf
-  echo 'address=/test.my-domain.com/127.0.0.1' > /usr/local/etc/dnsmasq.conf # editor may required to change file
+  edit /opt/homebrew/etc/dnsmasq.conf
+  # add "address=/test.my-domain.com/127.0.0.1"
+  # uncomment for logging "log-queries"
+  # add "log-facility=/var/log/dnsmasq.log"
+  # add server "server=8.8.8.8"
+  # uncomment and add "listen-address=127.0.0.1"
   sudo brew services restart dnsmasq
   ```
 - Go to System Settings → Network → Wi-Fi (or your selected active connection) → Advanced → DNS.
-  Then, add `127.0.0.1` and `8.8.8.8` to your DNS Servers.
+  Then, add `127.0.0.1` to your DNS Servers.
 - Flush DNS cache: 
   ```bash
   sudo killall -HUP mDNSResponder
@@ -82,3 +85,67 @@ Use `dnsmasq`
   ```bash
   ping test.my-domain.com
   ``` 
+  
+**Notes:**
+- test resolution 
+  ```bash
+  dig example.dev
+  nslookup example.dev
+  ping example.com
+  ```
+
+#### Option 4
+The thing is, that your local network wi-fi mobiles still not able to resolve your domain locally (because only rooted Android allowed to change `/etc/hosts`). So, let's try local web proxy then with `squid` & `dnsmasq`
+
+- Install `dnsmasq` following [Option #3](#option-3) instructions
+- Add to dnsmasq config 
+  - `edit /opt/homebrew/etc/dnsmasq.conf`
+  - dhcp-option=252,”http://127.0.0.1:3128/wpad.dat”
+- Now let's setup `squid`
+```bash
+brew install squid
+cp /opt/homebrew/etc/squid.conf /opt/homebrew/etc/squid.conf.back
+edit /opt/homebrew/etc/squid.conf
+```
+- Replace config with the following allow-all simple config:
+```text
+# Squid normally listens to port 3128
+http_port 3128
+
+# We setup an ACL that matches all IP addresses
+acl all src all
+
+# We allow all of our clients to browse the Internet
+http_access allow all
+
+# We strongly recommend the following be uncommented to protect innocent
+# web applications running on the proxy server who think the only
+# one who can access services on "localhost" is a local user
+#http_access deny to_localhost
+```
+- `squid -z` to check conf
+- `sudo brew services restart dnsmasq`
+- `brew services restart squid` - non-root!
+- check logs
+  - log file `/opt/homebrew/var/logs/cache.log`
+  - access log `/opt/homebrew/var/logs/access.log`
+- Now go to your mobile, open "Wifi settings" -> Proxy -> manual -> 
+  - set IP : `192.168.0.??` (set your squid server ip)
+  - set port: `3128`
+- Check your domain `test.my-domain.com` from mobile browser, now it should be resolved via squid -> dnsmasq -> npm -> your local server!!!
+**Note:**
+- By doing this all DNS & HTTP traffic from mobile clients browser (with configured proxy) and local DNS requests will go through `dnsmasq` and `squid`.
+
+
+#### Option 4.1 (no ARM64 images for Squid nad DNSmasq :( )
+So, let's try local web proxy then with `squid` & `dnsmasq` and `docker-compose`
+
+- dnsmasq.conf:
+    - listen-address=0.0.0.0
+    - address=/test.my-domain.com/127.0.0.1
+    - log-queries
+    - server=8.8.8.8
+- squid.conf
+    - http_port 3128
+      cache deny all
+      visible_hostname localhost

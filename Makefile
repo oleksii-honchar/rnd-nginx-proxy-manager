@@ -28,7 +28,7 @@ down: check-project-env-vars ## docker down
 logs: ## docker logs
 	@docker compose logs --follow
 
-restart: dockerComposeFile = ./docker-compose.yaml
+restart: dockerComposeFile = ./docker-compose.wpad.yaml
 restart: ## restart all
 	@docker compose -f $(dockerComposeFile) down
 	@docker compose -f $(dockerComposeFile) up --remove-orphans -d
