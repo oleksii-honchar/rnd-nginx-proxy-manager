@@ -70,3 +70,9 @@ tsconfig.tsbuildinfo
 # Nginx Proxy Manager
 data
 letsencrypt
+
+# DNSMASQ
+dnsmasq.conf
+
+# SQUID
+squid.conf

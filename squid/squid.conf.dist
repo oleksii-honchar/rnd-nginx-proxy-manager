@@ -1,0 +1,17 @@
+# Squid normally listens to port 3128
+http_port $SQUID_PORT
+
+# We setup an ACL that matches all IP addresses
+acl all src all
+
+dns_nameservers $DNSMASQ_IP
+
+# We allow all of our clients to browse the Internet
+http_access allow all
+
+# debug_options ALL, 2
+
+# We strongly recommend the following be uncommented to protect innocent
+# web applications running on the proxy server who think the only
+# one who can access services on "localhost" is a local user
+#http_access deny to_localhost

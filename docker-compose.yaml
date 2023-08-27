@@ -1,6 +1,9 @@
 version: '3.8'
+
 services:
   nginx_proxy_manager:
+    env_file:
+      - project.env
     image: jc21/nginx-proxy-manager:latest
     restart: unless-stopped
     container_name: nginx-proxy-manager
@@ -12,6 +15,85 @@ services:
       - DISABLE_IPV6=true # Uncomment this if IPv6 is not enabled on your host
       - PUID=$CURRENT_USER_ID
       - PGID=$CURRENT_USER_GROUP_ID
+    networks:
+      multi-proxy:
+        ipv4_address: ${NGINX_PROXY_MANAGER_IP}
     volumes:
-      - ./data:/data
-      - ./letsencrypt:/etc/letsencrypt
+      - ./nginx-proxy-manager/data:/data
+      - ./nginx-proxy-manager/letsencrypt:/etc/letsencrypt
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "5"
+
+  dnsmasq:
+    env_file:
+      - project.env
+    image: 4km3/dnsmasq:2.85-r2
+    container_name: dnsmasq
+    volumes:
+      - ./dnsmasq/dnsmasq.conf:/etc/dnsmasq.conf
+      - dnsmasq-logs:/var/log
+    networks:
+      multi-proxy:
+        ipv4_address: ${DNSMASQ_IP}
+    ports:
+      - "53:53/udp"
+      - "53:53/tcp"
+    cap_add:
+      - NET_ADMIN
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "5"
+
+  squid:
+    env_file:
+      - project.env
+    image: ubuntu/squid:5.2-22.04_beta
+    container_name: squid
+    volumes:
+      - ./squid/squid.conf:/etc/squid/squid.conf
+      - squid-logs:/var/log/squid
+
+    networks:
+      multi-proxy:
+        ipv4_address: ${SQUID_IP}
+    ports:
+      - ${SQUID_PORT}:${SQUID_PORT}
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "5"
+
+  logrotate:
+    env_file:
+      - project.env
+    build: ./logrotate
+    container_name: logrotate
+    volumes:
+      - ./logrotate/logrotate.conf:/etc/logrotate.conf
+      - ./logrotate/logrotate.d:/etc/logrotate.d
+      - ./logrotate/cronjob:/etc/crontabs/root
+      - dnsmasq-logs:/var/log/dnsmasq
+      - squid-logs:/var/log/squid
+    networks:
+      multi-proxy:
+        ipv4_address: ${LOGROTATE_IP}
+    restart: unless-stopped
+
+networks:
+  multi-proxy:
+    ipam:
+      driver: default
+      config:
+        - subnet: ${SERVICES_SUBNET}/20
+
+volumes:
+  squid-logs:
+      name: "squid-logs"
+  dnsmasq-logs:
+      name: "dnsmasq-logs"

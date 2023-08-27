@@ -18,22 +18,34 @@ help:
 check-project-env-vars:
 	@bash ./devops/local/scripts/check-project-env-vars.sh
 
-
-up: check-project-env-vars ## docker up
-	@docker compose -f ./docker-compose.yaml up --remove-orphans -d
-
-down: check-project-env-vars ## docker down
-	@docker compose -f ./docker-compose.yaml down
-
+logs: dockerComposeFile = ./docker-compose.yaml
 logs: ## docker logs
-	@docker compose logs --follow
+	@docker compose -f $(dockerComposeFile) logs --follow
 
-restart: dockerComposeFile = ./docker-compose.wpad.yaml
+up: dockerComposeFile = ./docker-compose.yaml
+up: check-project-env-vars ## docker up, or or svc=<svc-name>
+	@docker compose -f $(dockerComposeFile) up --build --remove-orphans -d ${svc}
+
+down: dockerComposeFile = ./docker-compose.yaml
+down: check-project-env-vars ## docker down, or svc=<svc-name>
+	@docker compose -f $(dockerComposeFile) down ${svc}
+
+restart: dockerComposeFile = ./docker-compose.yaml
 restart: ## restart all
 	@docker compose -f $(dockerComposeFile) down
-	@docker compose -f $(dockerComposeFile) up --remove-orphans -d
+	@docker compose -f $(dockerComposeFile) up --build --remove-orphans -d
+	@docker compose  -f $(dockerComposeFile) logs --follow
+
+restart-one: dockerComposeFile = ./docker-compose.yaml
+restart-one: ## restart all or svc=<svc-name>
+	@docker compose -f $(dockerComposeFile) stop ${svc}
+	@docker compose -f $(dockerComposeFile) up --build --remove-orphans -d ${svc}
 	@docker compose  -f $(dockerComposeFile) logs --follow
 
 nginx-exec-bush: ## get shell for nginx container
 	@docker exec -it nginx bash
 
+# DNSmasq
+
+build-dnsmasq:
+	@docker build --load -f ./dnsmasq/Dockerfile -t tuiteraz/dnsmasq:2.85-r2 .

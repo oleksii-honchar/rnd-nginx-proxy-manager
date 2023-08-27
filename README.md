@@ -129,7 +129,7 @@ http_access allow all
 - check logs
   - log file `/opt/homebrew/var/logs/cache.log`
   - access log `/opt/homebrew/var/logs/access.log`
-- Now go to your mobile, open "Wifi settings" -> Proxy -> manual -> 
+- Now go to your mobile, open "WiFi settings" -> Proxy -> manual -> 
   - set IP : `192.168.0.??` (set your squid server ip)
   - set port: `3128`
 - Check your domain `test.my-domain.com` from mobile browser, now it should be resolved via squid -> dnsmasq -> npm -> your local server!!!
