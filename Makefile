@@ -7,7 +7,6 @@ NC=\033[0m # No Color
 include project.env
 export $(shell sed 's/=.*//' project.env)
 
-
 .PHONY: help
 
 help:

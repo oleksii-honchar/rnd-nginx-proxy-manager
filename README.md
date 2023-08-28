@@ -1,12 +1,16 @@
 # rnd-nginx-proxy-manager
-* [How to start](#how-to-start)
-* [How to add host](#how-to-add-host)
-* [Troubleshooting](#troubleshooting)
-  - [If you don't have NAT loopback configured by your ISP, i.e. you can't make request to domain pointing to your Public IP](#if-you-dont-have-nat-loopback-configured-by-your-isp-ie-you-cant-make-request-to-domain-pointing-to-your-public-ip)
-    + [Option #1.](#option-%231)
-    + [Option #2](#option-%232)
-    + [Option #3](#option-%233)
-  
+
+- [How to start](#how-to-start)
+- [How to add host](#how-to-add-host)
+- [Troubleshooting](#troubleshooting)
+    * [If you don't have NAT loopback configured by your ISP, i.e. you can't make request to domain pointing to your Public IP](#no-nat-loopback)
+        + [Option #1 - when you don't need to access domain locally frequently - use Brave Tor](#option-1)
+        + [Option #2 - when few hosts in local network need access - update /etc/hosts](#option-2)
+        + [Option #3 - when Wi-Fi hosts or many hosts need acces via domain name - use dnsmasq + squid](#option-3)
+            - [Setup `dnsmasq`](#setup-dnsmasq)
+            - [Setup `squid`](#setup-squid)
+        + [Option #4 - let's make everything in docker without sudo](#option-4)  
+
 Launch NPM locally as reverse-proxy for any domain referencing to your home ISP Public IP 
 
 Platform: `Mac M1`
@@ -43,23 +47,26 @@ Platform: `Mac M1`
 
 ## Troubleshooting
 
-### If you don't have NAT loopback configured by your ISP, i.e. you can't make request to domain pointing to your Public IP 
+### If you don't have NAT loopback configured by your ISP, i.e. you can't make request to domain pointing to your Public IP {#no-nat-loopback} 
 
-#### Option #1. 
+Recommended option is [Option #4](#option-4) since it already configured, require minimum effort and leave minimum system footprint.
+
+#### Option #1 - when you don't need to access domain locally frequently - use Brave Tor {#option-1}
 To access your reverse-proxy resource by domain name you need to access it from different internet connection (if your ISP doesn’t support NAT loopback)
 - Open “New Private Window with Tor” (Brave)
 - Connect via mobile hotspot from other device
 - Use Android “HTTP shortcuts” app with mobile connection (disabled WiFi)
 - 
-#### Option #2 
+#### Option #2 - when few hosts in local network need access - update /etc/hosts {#option-2}
 Or you can you local domain forward by adding your domain and IP address to the `/etc/hosts` file. You may have to use sudo or editor.
 ```text
 echo "127.0.0.1 sub.<your-domain>.com" >> /etc/hosts
 dscacheutil -flushcache # Flush the DNS cache for the changes to take effect
 ```
 
-#### Option #3
-Use `dnsmasq`
+#### Option #3 - when Wi-Fi hosts or many hosts need acces via domain name - use dnsmasq + squid {#option-3}
+
+##### Setup `dnsmasq`
 - `brew install dnsmasq`
 - To start dnsmasq now and restart at startup
   ```bash
@@ -94,10 +101,11 @@ Use `dnsmasq`
   ping example.com
   ```
 
-#### Option 4
+##### Setup `squid`
+
 The thing is, that your local network wi-fi mobiles still not able to resolve your domain locally (because only rooted Android allowed to change `/etc/hosts`). So, let's try local web proxy then with `squid` & `dnsmasq`
 
-- Install `dnsmasq` following [Option #3](#option-3) instructions
+- When dnsmasq installed
 - Add to dnsmasq config 
   - `edit /opt/homebrew/etc/dnsmasq.conf`
   - dhcp-option=252,”http://127.0.0.1:3128/wpad.dat”
@@ -137,15 +145,14 @@ http_access allow all
 - By doing this all DNS & HTTP traffic from mobile clients browser (with configured proxy) and local DNS requests will go through `dnsmasq` and `squid`.
 
 
-#### Option 4.1 (no ARM64 images for Squid nad DNSmasq :( )
-So, let's try local web proxy then with `squid` & `dnsmasq` and `docker-compose`
+#### Option #4 - let's make everything in docker without sudo {#option-4}
 
-- dnsmasq.conf:
-    - listen-address=0.0.0.0
-    - address=/test.my-domain.com/127.0.0.1
-    - log-queries
-    - server=8.8.8.8
-- squid.conf
-    - http_port 3128
-      cache deny all
-      visible_hostname localhost
+- make copy of `project.env.dist` -> `project.env`
+- define all the values
+- copy/paste `.dist` templates to create `*.conf` files. Update following config files with proper values:
+  - `dnsmasq/dnsmasq.conf`
+  - `squid/squid.conf`
+- start all services
+```bash
+make up
+```
