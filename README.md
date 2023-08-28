@@ -62,8 +62,11 @@ Other options listed for educational purposes.
 
 <a name="option-1"></a>
 #### Option #1 - when you don't need to access domain locally frequently - use Brave Tor
+
 <details>
+
 <summary>expand</summary>
+
 To access your reverse-proxy resource by domain name you need to access it from different internet connection (if your ISP doesn’t support NAT loopback)
 - Open “New Private Window with Tor” (Brave)
 - Connect via mobile hotspot from other device
@@ -73,17 +76,21 @@ To access your reverse-proxy resource by domain name you need to access it from 
 
 <a name="option-2"></a>
 #### Option #2 - when few hosts in local network need access - update /etc/hosts
+
 <details>
 <summary>expand</summary>
+
 Or you can you local domain forward by adding your domain and IP address to the `/etc/hosts` file. You may have to use sudo or editor.
 ```text
 echo "127.0.0.1 sub.<your-domain>.com" >> /etc/hosts
 dscacheutil -flushcache # Flush the DNS cache for the changes to take effect
 ```
+
 </details>
 
 <a name="option-3"></a>
 #### Option #3 - when Wi-Fi hosts or many hosts need acces via domain name - use dnsmasq + squid
+
 <details>
 <summary>expand</summary>
 
@@ -164,6 +171,7 @@ http_access allow all
 - Check your domain `test.my-domain.com` from mobile browser, now it should be resolved via squid -> dnsmasq -> npm -> your local server!!!
 **Note:**
 - By doing this all DNS & HTTP traffic from mobile clients browser (with configured proxy) and local DNS requests will go through `dnsmasq` and `squid`.
+
 </details>
 
 <a name="option-4"></a>
