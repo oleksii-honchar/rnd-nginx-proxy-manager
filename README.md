@@ -1,5 +1,6 @@
 # rnd-nginx-proxy-manager
 
+- [Motivation](#motivation)
 - [How to start](#how-to-start)
 - [How to add host](#how-to-add-host)
 - [Troubleshooting](#troubleshooting)
@@ -11,7 +12,10 @@
             - [Setup `squid`](#setup-squid)
         + [Option #4 - let's make everything in docker without sudo](#option-4)  
 
-Launch NPM locally as reverse-proxy for any domain referencing to your home ISP Public IP 
+## Motivation
+
+- Launch NPM locally as reverse-proxy for any domain referencing to your home ISP Public IP
+- With minimal system footprint and manual effort
 
 Platform: `Mac M1`
 
@@ -48,27 +52,40 @@ Platform: `Mac M1`
 ## Troubleshooting
 
 <a name="no-nat-loopback"></a>
-### If you don't have NAT loopback configured by your ISP, i.e. you can't make request to domain pointing to your Public IP  
+### If you don't have NAT loopback configured by your ISP  
+
+I.e. you can't make request to domain pointing to your Public IP from your local network.
 
 Recommended option is [Option #4](#option-4) since it already configured, require minimum effort and leave minimum system footprint.
 
+Other options listed for educational purposes.
+
 <a name="option-1"></a>
 #### Option #1 - when you don't need to access domain locally frequently - use Brave Tor
+<details>
+<summary>expand</summary>
 To access your reverse-proxy resource by domain name you need to access it from different internet connection (if your ISP doesn’t support NAT loopback)
 - Open “New Private Window with Tor” (Brave)
 - Connect via mobile hotspot from other device
 - Use Android “HTTP shortcuts” app with mobile connection (disabled WiFi)
 
+</details>
+
 <a name="option-2"></a>
 #### Option #2 - when few hosts in local network need access - update /etc/hosts
+<details>
+<summary>expand</summary>
 Or you can you local domain forward by adding your domain and IP address to the `/etc/hosts` file. You may have to use sudo or editor.
 ```text
 echo "127.0.0.1 sub.<your-domain>.com" >> /etc/hosts
 dscacheutil -flushcache # Flush the DNS cache for the changes to take effect
 ```
+</details>
 
 <a name="option-3"></a>
 #### Option #3 - when Wi-Fi hosts or many hosts need acces via domain name - use dnsmasq + squid
+<details>
+<summary>expand</summary>
 
 ##### Setup `dnsmasq`
 - `brew install dnsmasq`
@@ -147,6 +164,7 @@ http_access allow all
 - Check your domain `test.my-domain.com` from mobile browser, now it should be resolved via squid -> dnsmasq -> npm -> your local server!!!
 **Note:**
 - By doing this all DNS & HTTP traffic from mobile clients browser (with configured proxy) and local DNS requests will go through `dnsmasq` and `squid`.
+</details>
 
 <a name="option-4"></a>
 #### Option #4 - let's make everything in docker without sudo
