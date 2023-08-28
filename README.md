@@ -20,7 +20,7 @@ Platform: `Mac M1`
 1. NPM setup
    - install docker (optionally `colima`)
    - copy `project.env` from `project.env.dist` and set vars
-   - `make up` - if you see permission errors, run 2 times more - it will create `./data` and `./letsencrypt` folders. Then it will launch successfully
+   - `make up svc=nginx_proxy_manager` - if you see permission errors, run 2 times more - it will create `./data` and `./letsencrypt` folders. Then it will launch successfully
 2. Set subdomain(`npm.<your-domain>.com`) `A` record pointing to pure public IP of local server (XX.XX.XX.XX), not `alias`([portchecker](https://portchecker.co/) can help to check public IP and open ports)
 3. Setup port forwarding for NginxProxyManager(NPM) on your router:
     - local server lan IP TCP, e.g. 192.168.0.111
@@ -120,7 +120,7 @@ cp /opt/homebrew/etc/squid.conf /opt/homebrew/etc/squid.conf.back
 edit /opt/homebrew/etc/squid.conf
 ```
 - Replace config with the following allow-all simple config:
-```text
+```bash
 # Squid normally listens to port 3128
 http_port 3128
 
@@ -158,5 +158,5 @@ http_access allow all
   - `squid/squid.conf`
 - start all services
 ```bash
-make up
+make restart
 ```
