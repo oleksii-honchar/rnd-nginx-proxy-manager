@@ -54,11 +54,7 @@ Platform: `Mac M1`
 <a name="no-nat-loopback"></a>
 ### If you don't have NAT loopback configured by your ISP  
 
-I.e. you can't make request to domain pointing to your Public IP from your local network.
-
-Recommended option is [Option #4](#option-4) since it already configured, require minimum effort and leave minimum system footprint.
-
-Other options listed for educational purposes.
+I.e. you can't make request to domain pointing to your Public IP from your local network. Recommended option is [Option #4](#option-4) since it already configured, require minimum effort and leave minimum system footprint. Other options listed for educational purposes.
 
 <a name="option-1"></a>
 #### Option #1 - when you don't need to access domain locally frequently - use Brave Tor
@@ -186,3 +182,11 @@ http_access allow all
 ```bash
 make restart
 ```
+- Go to System Settings → Network → Wi-Fi (or your selected active connection) → Advanced → Proxies.
+  Then, add `<local-host-ip>` with port=`<SQUID_PORT>` as proxy(e.g. proxy=192.168.0.111, port=3128).
+- Do the same for Wi-Fi clients
+- Now all local and Wi-Fi DNS and HTTP/S requests will be proxed through the `squid`
+
+**Note:**
+
+Locally `dig` and `nslookup` will resolve your domain to Public IP, but it's okey, because every HTTP/S request will be processed by `squid <-> dnsmasq -> nginx-proxy-manager`
