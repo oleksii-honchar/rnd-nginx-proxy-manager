@@ -34,7 +34,6 @@ services:
     container_name: dnsmasq
     volumes:
       - ./dnsmasq/dnsmasq.conf:/etc/dnsmasq.conf
-      - dnsmasq-logs:/var/log
     networks:
       multi-proxy:
         ipv4_address: ${DNSMASQ_IP}
@@ -52,37 +51,37 @@ services:
   squid:
     env_file:
       - project.env
-    image: ubuntu/squid:5.2-22.04_beta
+    image: tuiteraz/squid
     container_name: squid
+    user: root
     volumes:
       - ./squid/squid.conf:/etc/squid/squid.conf
-      - squid-logs:/var/log/squid
     networks:
       multi-proxy:
         ipv4_address: ${SQUID_IP}
     ports:
       - ${SQUID_PORT}:${SQUID_PORT}
     logging:
-      driver: "json-file"
+      driver: json-file
       options:
         max-size: "10m"
         max-file: "5"
 
-  logrotate:
-    env_file:
-      - project.env
-    build: ./logrotate
-    container_name: logrotate
-    volumes:
-      - ./logrotate/logrotate.conf:/etc/logrotate.conf
-      - ./logrotate/logrotate.d:/etc/logrotate.d
-      - ./logrotate/cronjob:/etc/crontabs/root
-      - dnsmasq-logs:/var/log/dnsmasq
-      - squid-logs:/var/log/squid
-    networks:
-      multi-proxy:
-        ipv4_address: ${LOGROTATE_IP}
-    restart: unless-stopped
+#  logrotate:
+#    env_file:
+#      - project.env
+#    build: ./logrotate
+#    container_name: logrotate
+#    volumes:
+#      - ./logrotate/logrotate.conf:/etc/logrotate.conf
+#      - ./logrotate/logrotate.d:/etc/logrotate.d
+#      - ./logrotate/cronjob:/etc/crontabs/root
+#      - dnsmasq-logs:/var/log/dnsmasq
+#      - squid-logs:/var/log/squid
+#    networks:
+#      multi-proxy:
+#        ipv4_address: ${LOGROTATE_IP}
+#    restart: unless-stopped
 
   cadvisor:
     env_file:
@@ -113,9 +112,3 @@ networks:
       driver: default
       config:
         - subnet: ${SERVICES_SUBNET}/20
-
-volumes:
-  squid-logs:
-      name: "squid-logs"
-  dnsmasq-logs:
-      name: "dnsmasq-logs"

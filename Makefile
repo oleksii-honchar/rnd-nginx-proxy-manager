@@ -41,10 +41,16 @@ restart-one: ## restart all or svc=<svc-name>
 	@docker compose -f $(dockerComposeFile) up --build --remove-orphans -d ${svc}
 	@docker compose  -f $(dockerComposeFile) logs --follow
 
-nginx-exec-bush: ## get shell for nginx container
-	@docker exec -it nginx bash
+exec-bash: ## get shell for svc=<svc-name> container
+	@docker exec -it ${svc} bash
+
+exec-sh: ## get shell for svc=<svc-name> container
+	@docker exec -it ${svc} sh
 
 # DNSmasq
 
 build-dnsmasq:
-	@docker build --load -f ./dnsmasq/Dockerfile -t tuiteraz/dnsmasq:2.85-r2 .
+	@docker build --load -f ./dnsmasq/Dockerfile -t tuiteraz/dnsmasq:2.85-r2 --platform linux/arm64 .
+
+build-squid:
+	@docker build --load -f ./squid/Dockerfile -t tuiteraz/squid --platform linux/arm64 .
