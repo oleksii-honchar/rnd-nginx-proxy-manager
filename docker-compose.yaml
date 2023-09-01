@@ -64,22 +64,6 @@ services:
         max-size: "10m"
         max-file: "5"
 
-#  logrotate:
-#    env_file:
-#      - project.env
-#    build: ./logrotate
-#    container_name: logrotate
-#    volumes:
-#      - ./logrotate/logrotate.conf:/etc/logrotate.conf
-#      - ./logrotate/logrotate.d:/etc/logrotate.d
-#      - ./logrotate/cronjob:/etc/crontabs/root
-#      - dnsmasq-logs:/var/log/dnsmasq
-#      - squid-logs:/var/log/squid
-#    networks:
-#      multi-proxy:
-#        ipv4_address: ${LOGROTATE_IP}
-#    restart: unless-stopped
-
   cadvisor:
     env_file:
       - project.env
@@ -90,7 +74,7 @@ services:
     container_name: cadvisor
     privileged: true
     ports:
-      - 8080:8080
+      - 4082:8080
     volumes:
       - /:/rootfs:ro
       - /var/run:/var/run:ro # for docker socket

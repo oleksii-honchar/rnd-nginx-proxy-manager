@@ -8,7 +8,7 @@ server=1.0.0.1
 server=1.1.1.1
 server=8.8.8.8
 
-address=/<your-domain.tld>/$NGINX_PROXY_MANAGER_IP
+address=/$DOMAIN_NAME/$NGINX_PROXY_MANAGER_IP
 
 dhcp-option=252,"http://$SQUID_IP:$SQUID_PORT/wpad.dat"
 
