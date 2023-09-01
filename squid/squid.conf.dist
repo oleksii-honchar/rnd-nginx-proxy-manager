@@ -9,9 +9,15 @@ dns_nameservers $DNSMASQ_IP
 # We allow all of our clients to browse the Internet
 http_access allow all
 
-# debug_options ALL, 2
+# for human readable time format
+logformat combined1 %tl | %>a %[ui %[un "%rm %ru HTTP/%rv" %>Hs %<st "%{Referer}>h" "%{User-Agent}>h" %Ss:%Sh
+access_log /var/log/squid/squid_access_log_pipe combined1
+cache_log /var/log/squid/squid_cache_log_pipe combined1
+
+# verbose logging for all levels
+debug_options ALL, 5
 
 # We strongly recommend the following be uncommented to protect innocent
 # web applications running on the proxy server who think the only
 # one who can access services on "localhost" is a local user
-#http_access deny to_localhost
+http_access deny to_localhosts deny to_localhost

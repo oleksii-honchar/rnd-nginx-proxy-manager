@@ -1,7 +1,0 @@
-# Run logrotate every day at midnight
-#0 0 * * * logrotate -f /etc/logrotate.conf
-#0 0 * * * /etc/cron-echo.sh
-
-# every 1 min
-#* * * * * logrotate -f /etc/logrotate.conf
-* * * * * /etc/cron-echo.sh

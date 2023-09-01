@@ -21,8 +21,12 @@ logs: dockerComposeFile = ./docker-compose.yaml
 logs: ## docker logs
 	@docker compose -f $(dockerComposeFile) logs --follow
 
+log: dockerComposeFile = ./docker-compose.yaml
+log: ## docker log for svc=<docker service name>
+	@docker compose -f $(dockerComposeFile) logs --follow ${svc}
+
 up: dockerComposeFile = ./docker-compose.yaml
-up: check-project-env-vars ## docker up, or or svc=<svc-name>
+up: check-project-env-vars ## docker up, or svc=<svc-name>
 	@docker compose -f $(dockerComposeFile) up --build --remove-orphans -d ${svc}
 
 down: dockerComposeFile = ./docker-compose.yaml
@@ -46,11 +50,6 @@ exec-bash: ## get shell for svc=<svc-name> container
 
 exec-sh: ## get shell for svc=<svc-name> container
 	@docker exec -it ${svc} sh
-
-# DNSmasq
-
-build-dnsmasq:
-	@docker build --load -f ./dnsmasq/Dockerfile -t tuiteraz/dnsmasq:2.85-r2 --platform linux/arm64 .
 
 build-squid:
 	@docker build --load -f ./squid/Dockerfile -t tuiteraz/squid --platform linux/arm64 .

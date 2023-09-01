@@ -1,5 +1,0 @@
-# Run logrotate every day at midnight
-#0 0 * * * logrotate -f /etc/logrotate.conf
-
-# every 1 min
-* * * * * logrotate -f /etc/logrotate.conf

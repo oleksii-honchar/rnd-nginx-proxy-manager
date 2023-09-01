@@ -37,9 +37,6 @@ services:
     networks:
       multi-proxy:
         ipv4_address: ${DNSMASQ_IP}
-    ports:
-      - "53:53/udp"
-      - "53:53/tcp"
     cap_add:
       - NET_ADMIN
     logging:

@@ -13,8 +13,4 @@ address=/<your-domain.tld>/$NGINX_PROXY_MANAGER_IP
 dhcp-option=252,"http://$SQUID_IP:$SQUID_PORT/wpad.dat"
 
 log-queries=normal
-# log-facility=/dev/null
-# log-facility=/var/log/dnsmasq.log
-# log-async
-# log-async-rate=1000
-# log-async-severity=critical
+log-facility=-
