@@ -16,8 +16,3 @@ cache_log /var/log/squid/squid_cache_log_pipe combined1
 
 # verbose logging for all levels
 debug_options ALL, 5
-
-# We strongly recommend the following be uncommented to protect innocent
-# web applications running on the proxy server who think the only
-# one who can access services on "localhost" is a local user
-http_access deny to_localhosts deny to_localhost
