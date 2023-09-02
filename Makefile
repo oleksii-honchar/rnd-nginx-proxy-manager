@@ -31,7 +31,7 @@ log: ## docker log for svc=<docker service name>
 	@docker compose -f $(dockerComposeFile) logs --follow ${svc}
 
 up: dockerComposeFile = ./docker-compose.yaml
-up: check-project-env-vars ## docker up, or svc=<svc-name>
+up: generate-config check-project-env-vars ## docker up, or svc=<svc-name>
 	@docker compose -f $(dockerComposeFile) up --build --remove-orphans -d ${svc}
 
 down: dockerComposeFile = ./docker-compose.yaml
@@ -40,14 +40,14 @@ down: check-project-env-vars ## docker down, or svc=<svc-name>
 
 .ONESHELL:
 restart: dockerComposeFile = ./docker-compose.yaml
-restart: ## restart all
+restart: generate-config check-project-env-vars ## restart all
 	@docker compose -f $(dockerComposeFile) down
 	@docker compose -f $(dockerComposeFile) up --build --remove-orphans -d
 	@docker compose  -f $(dockerComposeFile) logs --follow
 
 .ONESHELL:
 restart-one: dockerComposeFile = ./docker-compose.yaml
-restart-one: ## restart all or svc=<svc-name>
+restart-one: generate-config check-project-env-vars ## restart all or svc=<svc-name>
 	@docker compose -f $(dockerComposeFile) stop ${svc}
 	@docker compose -f $(dockerComposeFile) up --build --remove-orphans -d ${svc}
 	@docker compose  -f $(dockerComposeFile) logs --follow
@@ -61,5 +61,5 @@ exec-sh: ## get shell for svc=<svc-name> container
 build-squid:
 	@docker build --load -f ./squid/Dockerfile -t tuiteraz/squid --platform linux/arm64 .
 
-init:
-	@bash ./init-config.bash
+generate-config:
+	@bash ./generate-config.bash
