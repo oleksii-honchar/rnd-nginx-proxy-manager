@@ -31,6 +31,7 @@ services:
     env_file:
       - project.env
     image: 4km3/dnsmasq:2.85-r2
+    platform: linux/aarch64 # m1/m2 mac
     container_name: dnsmasq
     volumes:
       - ./dnsmasq/dnsmasq.conf:/etc/dnsmasq.conf
@@ -48,7 +49,8 @@ services:
   squid:
     env_file:
       - project.env
-    image: tuiteraz/squid
+    image: tuiteraz/squid:5.9
+    platform: linux/aarch64 # m1/m2 mac
     container_name: squid
     user: root
     volumes:

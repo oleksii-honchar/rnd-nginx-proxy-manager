@@ -65,11 +65,10 @@ blablo.chainLog() {
 }
 
 # Params
-# ${1} - (0|1) - 0 - success sign(default), 1 - cross error
+# ${1} - (0|1) - 0 - success status icon(default), 1 - error icon
 blablo.finish() {
     statusIconType="${1:-0}"
 
-    #blabloArgsQueue[0]="✅"
     blabloArgsQueue[0]="\033[1;32m ✔\033[0m"
 
     if [ "$statusIconType" -eq 1 ]; then

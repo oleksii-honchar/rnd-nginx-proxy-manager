@@ -22,35 +22,29 @@ help:
 check-project-env-vars:
 	@bash ./devops/local/scripts/check-project-env-vars.sh
 
-logs: dockerComposeFile = ./docker-compose.yaml
 logs: ## docker logs
-	@docker compose -f $(dockerComposeFile) logs --follow
+	@docker compose logs --follow
 
-log: dockerComposeFile = ./docker-compose.yaml
 log: ## docker log for svc=<docker service name>
-	@docker compose -f $(dockerComposeFile) logs --follow ${svc}
+	@docker compose logs --follow ${svc}
 
-up: dockerComposeFile = ./docker-compose.yaml
 up: generate-config check-project-env-vars ## docker up, or svc=<svc-name>
-	@docker compose -f $(dockerComposeFile) up --build --remove-orphans -d ${svc}
+	@docker compose up --build --remove-orphans -d ${svc}
 
-down: dockerComposeFile = ./docker-compose.yaml
 down: check-project-env-vars ## docker down, or svc=<svc-name>
-	@docker compose -f $(dockerComposeFile) down ${svc}
+	@docker compose down ${svc}
 
 .ONESHELL:
-restart: dockerComposeFile = ./docker-compose.yaml
 restart: generate-config check-project-env-vars ## restart all
-	@docker compose -f $(dockerComposeFile) down
-	@docker compose -f $(dockerComposeFile) up --build --remove-orphans -d
-	@docker compose  -f $(dockerComposeFile) logs --follow
+	@docker compose down
+	@docker compose up --build --remove-orphans -d
+	@docker compose logs --follow
 
 .ONESHELL:
-restart-one: dockerComposeFile = ./docker-compose.yaml
 restart-one: generate-config check-project-env-vars ## restart all or svc=<svc-name>
-	@docker compose -f $(dockerComposeFile) stop ${svc}
-	@docker compose -f $(dockerComposeFile) up --build --remove-orphans -d ${svc}
-	@docker compose  -f $(dockerComposeFile) logs --follow
+	@docker compose stop ${svc}
+	@docker compose up --build --remove-orphans -d ${svc}
+	@docker compose logs --follow
 
 exec-bash: ## get shell for svc=<svc-name> container
 	@docker exec -it ${svc} bash

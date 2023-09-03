@@ -12,56 +12,91 @@
             - [Setup `squid`](#setup-squid)
         + [Option #4 - let's make everything in docker without sudo](#option-4)  
 
-## Motivation
+## Goal
 
-- Launch NPM locally as reverse-proxy for any domain referencing to your home ISP Public IP
+- Launch Nginx-Proxy-Manager(NPM) locally as reverse-proxy for any domain referencing to the address ISP Public IP
 - With minimal system footprint and manual effort
 
-Platform: `Mac M1`
+## Context
+
+- Platform: `Mac M1`
+- `NAT loopback` disabled by ISP, i.e local device can't access services using its public IP address from within the same network. It means that one can't access `your-domain.tld` proxied service from the same network. 
 
 ## How to start
 
-1. NPM setup
-   - install docker (optionally `colima`)
-   - copy `project.env` from `project.env.dist` and set vars
-   - `make up svc=nginx_proxy_manager` - if you see permission errors, run 2 times more - it will create `./data` and `./letsencrypt` folders. Then it will launch successfully
-2. Set subdomain(`npm.<your-domain>.com`) `A` record pointing to pure public IP of local server (XX.XX.XX.XX), not `alias`([portchecker](https://portchecker.co/) can help to check public IP and open ports)
-3. Setup port forwarding for NginxProxyManager(NPM) on your router:
-    - local server lan IP TCP, e.g. 192.168.0.111
-    - `TCP/UDP 192.168.0.111 :80 → :80`
-    - `TCP/UDP 192.168.0.111 :443 → :443`
-4. Open NPM admin panel, use default creds to login to NPM
-    - `localhost:4081`
-    - `admin@example.com`
-    - `changeme`
+0. Docker setup
+   - Install `docker` (using `colima` or `docker desktop` wrappers)
+   - Check if `docker` default context uses proper socket
+     ```bash
+     colima status # will output socket path
+     docker context ls #check for default (*) context socket link
+     # if it shows error or socket path is wrong, then update it via DOCKER_HOST vars, e.g. for zshrc
+     echo "export DOCKER_HOST=unix:<path-to-socket>/docker.sock" >> ~/.zshrc
+     # restart shell
+     docker context ls # check socket path again
+     ```
+1. Nginx-Proxy-Manager(NPM) setup
+   - Copy `project.env.dist` to `project.env` and set the values
+   - Create if not exists folders: "nginx-proxy-manager/data", "nginx-proxy-manager/letsencrypt"
+   - Execute `make up` or `make restart` - if you see permission errors, run 2 times more - it will create `./data` and `./letsencrypt` folders. Then it will launch successfully
+2. Set desired subdomain(e.g. `your.domain.tld`) `A` record pointing to the ISP public IP ([portchecker](https://portchecker.co/) can help to check public IP and open ports)
+3. Setup port forwarding for NginxProxyManager on your router:
+   - Local server network IP, e.g. `192.168.0.111`
+   - `TCP/UDP 192.168.0.111 :80 → :80`
+   - `TCP/UDP 192.168.0.111 :443 → :443`
+4. Open NPM admin panel, use default credentials to login to NPM
+   - `localhost:4081`
+   - `admin@example.com`
+   - `changeme`
+5. Click on "Add proxy host"
+   - **Domain name** - `your.domain.tld`, without `http`, `https`, or `port`. Just plain domain name.
+   - **Scheme** - `http` - it’s your local service access scheme
+   - **Forward hostname** - if NPM not in the same `docker-compose`, put your local server LAN IP, e.g. `192.168.0.111`
+   - **Forward port** - local service access port, e.g. `3000`
+   - **Block common exploits** - `check`
+   - **SSL**
+       - **certificate** - generate for subdomain - `your-domain.tld`
+       - You can generate it from the settings form or choose generated before from list
+       - Check `Force SSL`, `HSTS`, `HTTP/2 support`, `HSTS subdomains`
+6. Go to System Settings → Network → Wi-Fi (or your selected active connection) → Advanced → Proxies. 
+   - Add `<local-host-ip>` with `port=<SQUID_PORT>` as proxy(e.g. `proxy=192.168.0.111, port=3128`).
+   - Do the same for Wi-Fi clients, which need to access `your-domain.tld` from local network
+   - Now all local and Wi-Fi DNS and HTTP/S requests will be proxied through the `squid`
 
-## How to add host
-- Click on "Add proxy host"
-    - **Domain name** - `sub.<your-domain>.com`
-        - without `http`, `https`, or `port`
-    - **Scheme** - `http` - it’s your local service access scheme
-    - **Forward hostname** - if NPM not in the same docker-compose, put your local server LAN IP, e.g. `192.168.0.111`
-    - **Forward port** - local service access port, e.g. `3000`
-    - **Block common exploits** - `check`
-    - **SSL**
-        - **certificate** - generate for subdomain - `sub.<your-domain>.com`
-        - you can generate it from the settings form or choose generated beofre from list
-        - check `Force SSL`, `HSTS`, `HTTP/2 support`, `HSTS subdomains`
-- Now you should be able to reach your local service from the web by `https://sub.<your-domain>.com` and your connection should be secure
+## Solution description
 
-## Troubleshooting
+With NAT loopback disabled by the ISP, local network devices cannot access the proxied service using the `your-domain.tld` name. There are various options available for solving this problem, which are described below for educational purposes. The current solution utilizes a non-root `docker-compose` approach with `squid` and `dnsmasq`. Custom `arm64` `squid` image used to disable file logs and pipe them to docker native logs to manage log rotation on docker-compose level. Also, custom image of `cadvisor` used since there is no official `arm64` version.
 
-<a name="no-nat-loopback"></a>
-### If you don't have NAT loopback configured by your ISP  
+Configuration for `squid` and `dnsmasq` updated by `generate-config.bash` script on every docker  `make <command>`. You just need to have `project.env` properly filled.
 
-I.e. you can't make request to domain pointing to your Public IP from your local network. Recommended option is [Option #4](#option-4) since it already configured, require minimum effort and leave minimum system footprint. Other options listed for educational purposes.
+Here is the deployment diagram for the solution:
+![Deployment diagram](docs/deployment-diagram.jpg)
 
-<a name="option-1"></a>
-#### Option #1 - when you don't need to access domain locally frequently - use Brave Tor
+**Description:**
+1. External user flow
+    - (1) - External internet user makes request to `your-domain.tld`
+    - (2) - DNS (AWS in this case) resolve it to the ISP Public IP 
+    - (3) - When request reaches local network ingress, router it redirects it to local NPMs `:80` or `:443` ports. Then it resolves to configures local network service according to NPM configuration
+2. Local user flow
+   - (4) - User from the same residential network make request to the `your-domain.tld` from his browser. And his network already configured to use proxy. Which in fact is `Squid` proxy server running in the docker-compose configuration with NPM 
+   - (5) - `Squid` configured to resolve domains using `dnsmasq`. Which is aware of `your-domain.tld` to be forwarded to NPM `multi-proxy` network IP. 
+   - (6) - When domain name IP resolved, `squid` proxied requests to NPM
+
+**Notes**
+- This is known tradeoff - with `squid` proxy enabled on your local devices, all their DNS and HTTP traffic will go through the `squid` on host machine. On "Macbook Pro M1" it utilizes ~0.02 cores
+
+![docker-stats.jpg](docs/docker-stats.jpg)
+
+- There is [cAdvisor](https://github.com/google/cadvisor) on port `:4082` present in docker-compose in order to monitor resource utilization
+
+- Locally `dig` and `nslookup` will resolve your domain to Public IP, but it's okay, because every HTTP/S request will be processed by `squid <-> dnsmasq -> nginx-proxy-manager`
+
+### Other options
+Described options leaves considerable system footprint or hardly scalable.
 
 <details>
 
-<summary>expand</summary>
+<summary>Option #1 - when you don't need to access domain locally frequently - use Brave Tor</summary>
 
 To access your reverse-proxy resource by domain name you need to access it from different internet connection (if your ISP doesn’t support NAT loopback)
 - Open “New Private Window with Tor” (Brave)
@@ -70,11 +105,8 @@ To access your reverse-proxy resource by domain name you need to access it from 
 
 </details>
 
-<a name="option-2"></a>
-#### Option #2 - when few hosts in local network need access - update /etc/hosts
-
 <details>
-<summary>expand</summary>
+<summary>Option #2 - when few hosts in local network need access - update /etc/hosts</summary>
 
 Or you can you local domain forward by adding your domain and IP address to the `/etc/hosts` file. You may have to use sudo or editor.
 ```text
@@ -84,13 +116,10 @@ dscacheutil -flushcache # Flush the DNS cache for the changes to take effect
 
 </details>
 
-<a name="option-3"></a>
-#### Option #3 - when Wi-Fi hosts or many hosts need acces via domain name - use dnsmasq + squid
-
 <details>
-<summary>expand</summary>
+<summary>Option #3 - when Wi-Fi hosts or many hosts need acces via domain name - use dnsmasq + squid</summary>
 
-##### Setup `dnsmasq`
+Setup `dnsmasq`
 - `brew install dnsmasq`
 - To start dnsmasq now and restart at startup
   ```bash
@@ -125,7 +154,7 @@ dscacheutil -flushcache # Flush the DNS cache for the changes to take effect
   ping example.com
   ```
 
-##### Setup `squid`
+Setup `squid`
 
 The thing is, that your local network wi-fi mobiles still not able to resolve your domain locally (because only rooted Android allowed to change `/etc/hosts`). So, let's try local web proxy then with `squid` & `dnsmasq`
 
@@ -170,23 +199,3 @@ http_access allow all
 
 </details>
 
-<a name="option-4"></a>
-#### Option #4 - let's make everything in docker without sudo
-
-- make copy of `project.env.dist` -> `project.env`
-- define all the values
-- copy/paste `.dist` templates to create `*.conf` files. Update following config files with proper values:
-  - `dnsmasq/dnsmasq.conf`
-  - `squid/squid.conf`
-- start all services
-```bash
-make restart
-```
-- Go to System Settings → Network → Wi-Fi (or your selected active connection) → Advanced → Proxies.
-  Then, add `<local-host-ip>` with port=`<SQUID_PORT>` as proxy(e.g. proxy=192.168.0.111, port=3128).
-- Do the same for Wi-Fi clients
-- Now all local and Wi-Fi DNS and HTTP/S requests will be proxed through the `squid`
-
-**Note:**
-
-Locally `dig` and `nslookup` will resolve your domain to Public IP, but it's okey, because every HTTP/S request will be processed by `squid <-> dnsmasq -> nginx-proxy-manager`
